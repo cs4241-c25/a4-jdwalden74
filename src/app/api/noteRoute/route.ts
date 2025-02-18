@@ -9,7 +9,7 @@ if (!mongo_uri) {
 const client = new MongoClient(mongo_uri || "");
 
 export async function GET() {
-    const session = await getServerSession(); // No need for authOptions if it's being automatically handled
+    const session = await getServerSession();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -26,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-    const session = await getServerSession(); // No need for authOptions if it's being automatically handled
+    const session = await getServerSession();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-    const session = await getServerSession(); // No need for authOptions if it's being automatically handled
+    const session = await getServerSession();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -90,7 +90,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-    const session = await getServerSession(); // No need for authOptions if it's being automatically handled
+    const session = await getServerSession();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

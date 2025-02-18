@@ -16,7 +16,7 @@ export type Note = {
 export default function Clipboard() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [formOpen, setFormOpen] = useState(false);
-    const [editNote, setEditNote] = useState<Note | null>(null); // Track note being edited
+    const [editNote, setEditNote] = useState<Note | null>(null);
     const [newNote, setNewNote] = useState({
         title: "",
         content: "",
@@ -71,7 +71,7 @@ export default function Clipboard() {
             setNotes(data.notes);
             setEditNote(null);
         } else {
-            // POST request for adding a new note
+
             const newNoteData = {
                 title: newNote.title,
                 content: newNote.content,
@@ -133,7 +133,7 @@ export default function Clipboard() {
 
     const editNoteHandler = (note: Note) => {
         setEditNote(note);
-        setFormOpen(false); // Ensure new note form is closed
+        setFormOpen(false);
     };
 
     const resetForm = () => {

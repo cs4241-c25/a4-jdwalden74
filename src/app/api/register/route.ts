@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
+import bcrypt from "bcryptjs"
 
 const mongo_uri = process.env.MONGO_URI;
 
@@ -24,7 +25,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "User already exists" }, { status: 400 });
         }
 
-        await db.collection("users").insertOne({ username, password: password });
+        // Hash the password before storing it
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await db.collection("users").insertOne({ username, password: hashedPassword });
 
         return NextResponse.json({ message: "User registered successfully" }, { status: 201 });
     } catch (error) {

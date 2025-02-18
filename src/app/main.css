@@ -2,6 +2,7 @@
     margin: 0;
     font-family: Arial, sans-serif;
     display: flex;
+    flex-direction: row;
 }
 header {
     width: 150px;
@@ -36,8 +37,12 @@ header ul li a:hover {
     text-decoration: underline;
 }
 
+
+
 #note-display{
+    align-self: flex-start;
     background-color: white;
+    height: 100vh
 }
 
 #note-display-header {

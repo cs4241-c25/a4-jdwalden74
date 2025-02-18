@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     try {
         await client.connect();
         const db = client.db();
-        const notes = await db.collection("notes").find().toArray();
+        const notes = await db.collection("notes").find({ userId: session.user?.name }).toArray();
         return NextResponse.json({ success: true, data: notes }, { status: 200 });
     } catch (e) {
         console.error(e);
@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
             content: body.content,
             color: body.color,
             date: body.date,
-            userId: session.user?.email, // Associate note with user
+            userId: session.user?.name,
         };
 
         const notesCollection = db.collection("notes");
         await notesCollection.insertOne(newNote);
 
-        const notes = await notesCollection.find().toArray();
+        const notes = await notesCollection.find({ userId: session.user?.name }).toArray();
         return NextResponse.json({ message: "Note saved successfully!", notes }, { status: 201 });
     } catch (error) {
         console.error(error);
@@ -76,13 +76,13 @@ export async function DELETE(request: NextRequest) {
         }
 
         const notesCollection = db.collection("notes");
-        const result = await notesCollection.deleteOne({ _id: new ObjectId(id) });
+        const result = await notesCollection.deleteOne({ _id: new ObjectId(id), userId: session.user?.name });
 
         if (result.deletedCount === 0) {
             return NextResponse.json({ error: "Note not found" }, { status: 404 });
         }
 
-        const notes = await notesCollection.find({}).toArray();
+        const notes = await notesCollection.find({ userId: session.user?.name }).toArray();
         return NextResponse.json({ message: "Note deleted successfully", notes }, { status: 200 });
     } catch (error) {
         console.error(error);
@@ -108,7 +108,7 @@ export async function PATCH(request: NextRequest) {
 
         const notesCollection = db.collection("notes");
         const result = await notesCollection.updateOne(
-            { _id: new ObjectId(noteId) },
+            { _id: new ObjectId(noteId), userId: session.user?.name },
             {
                 $set: {
                     title: body.title,
@@ -123,7 +123,7 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: "Note not found" }, { status: 404 });
         }
 
-        const notes = await notesCollection.find().toArray();
+        const notes = await notesCollection.find({ userId: session.user?.name }).toArray();
         return NextResponse.json({ message: "Note updated successfully", notes }, { status: 200 });
     } catch (error) {
         console.error(error);

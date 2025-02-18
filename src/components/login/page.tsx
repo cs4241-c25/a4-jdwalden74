@@ -1,8 +1,8 @@
 'use client';
 
 import "@/app/login.css";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export function Login() {
@@ -24,12 +24,12 @@ export function Login() {
         if (result?.error) {
             setError("Invalid username or password");
         } else {
-            router.push("/clipboard");  // Redirect to notes page
+            router.push("/clipboard");
         }
     };
 
     return (
-        <div className="wrapper">
+        <div className="wrapper-login">
             <h1 className="font-bold text-4xl py-5">Login</h1>
             {error && <p className="text-red-500">{error}</p>}
             <form onSubmit={handleSubmit}>
@@ -41,7 +41,6 @@ export function Login() {
             </form>
 
             <div className="mt-3">
-
                 <p>Don't have an account? <a href="/register" className="text-blue-500">Create an account</a></p>
             </div>
 

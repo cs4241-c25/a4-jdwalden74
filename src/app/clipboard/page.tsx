@@ -2,6 +2,8 @@
 
 import "@/app/main.css"
 import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";  // Import signOut here
+import { useRouter } from "next/navigation";
 
 export type Note = {
     _id: string,
@@ -14,72 +16,101 @@ export type Note = {
 export default function Clipboard() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [formOpen, setFormOpen] = useState(false);
+    const [editNote, setEditNote] = useState<Note | null>(null); // Track note being edited
     const [newNote, setNewNote] = useState({
-        _id: "",
         title: "",
         content: "",
         date: "",
         color: "light-grey"
     });
 
+    const { data: session, status } = useSession();
+    const router = useRouter();
+
     useEffect(() => {
-        // Get notes on load
+        if (status === "unauthenticated") {
+            router.push("/");
+        }
+    }, [status, router]);
+
+    useEffect(() => {
         const getNotes = async () => {
             try {
-                const response = await fetch("/api/noteRoute");
+                const response = await fetch("/api/noteRoute", {
+                    method: "GET", credentials: "include",
+                });
                 const data = await response.json();
                 setNotes(data.data || []);
             } catch (error) {
                 console.error("Error fetching notes:", error);
             }
         };
-
         getNotes();
     }, []);
 
     const handleNoteSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        const newNoteData = {
-            title: newNote.title,
-            content: newNote.content,
-            color: newNote.color,
-            date: new Date().toISOString().split('T')[0]
-        };
+        if (editNote) {
+            const response = await fetch("/api/noteRoute", {
+                method: 'PATCH',
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id: editNote._id,
+                    title: editNote.title,
+                    content: editNote.content,
+                    color: editNote.color,
+                    date: new Date().toISOString().split('T')[0]
+                })
+            });
 
-        const response = await fetch("/api/noteRoute", {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(newNoteData)
-        });
+            const data = await response.json();
+            setNotes(data.notes);
+            setEditNote(null);
+        } else {
+            // POST request for adding a new note
+            const newNoteData = {
+                title: newNote.title,
+                content: newNote.content,
+                color: newNote.color,
+                date: new Date().toISOString().split('T')[0]
+            };
 
-        const data = await response.json();
-        setNotes(data.notes);
-        setNewNote({
-            _id: "",
-            title: "",
-            content: "",
-            date: "",
-            color: "light-grey"
-        })
-        setFormOpen(false);
+            const response = await fetch("/api/noteRoute", {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify(newNoteData)
+            });
+
+            const data = await response.json();
+            setNotes(data.notes);
+        }
+
+        resetForm();
     };
 
     const handleNoteChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
-        setNewNote(prevState => ({
-            ...prevState,
-            [name]: value
-        }));
+
+        if (editNote) {
+            setEditNote(prevState => prevState ? { ...prevState, [name]: value } : null);
+        } else {
+            setNewNote(prevState => ({ ...prevState, [name]: value }));
+        }
     };
 
     const handleColorChange = (color: string) => {
-        setNewNote(prevState => ({
-            ...prevState,
-            color: color
-        }));
+        if (editNote) {
+            setEditNote(prevState => prevState ? { ...prevState, color: color } : null);
+        } else {
+            setNewNote(prevState => ({ ...prevState, color: color }));
+        }
     };
 
     const removeNote = async (id: string) => {
@@ -88,6 +119,7 @@ export default function Clipboard() {
             headers: {
                 "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify({ id })
         });
 
@@ -99,75 +131,113 @@ export default function Clipboard() {
         }
     };
 
+    const editNoteHandler = (note: Note) => {
+        setEditNote(note);
+        setFormOpen(false); // Ensure new note form is closed
+    };
+
+    const resetForm = () => {
+        setFormOpen(false);
+        setEditNote(null);
+        setNewNote({
+            title: "",
+            content: "",
+            date: "",
+            color: "light-grey"
+        });
+    };
 
     return (
-        <div className="wrapper">
-            <header>
-                <h1 id="sidebar">Sidebar</h1>
-                <p className="note-count">{notes.length}</p>
-            </header>
-            <section id="note-display">
-                <div id="note-display-header">
-                    <h2>Note Clipboard</h2>
-                    <button className="add-note-button" onClick={() => setFormOpen(!formOpen)}>Add Note</button>
-                </div>
-                <div id="clipboard">
-                    {notes.map((note) => (
-                        <div key={note._id} className={`clipboard-item ${note.color}`}>
-                            <div className="note-header">
-                                <h1>{note.title}</h1>
-                                <button onClick={() => removeNote(note._id)} className="delete-btn">X</button>
-                            </div>
-                            <p>{note.content}</p>
-                            <p className="note-date">{note.date}</p>
-                        </div>
-                    ))}
-                    {formOpen && (
-                        <form
-                            className={`note-form ${newNote.color}`}
-                            onSubmit={handleNoteSubmit}
-                            style={{ backgroundColor: newNote.color }} // Dynamically set form background color
+        <>
+            <div className="wrapper">
+                <header>
+                    <h3 id="sidebar">User's Notes</h3>
+                    <p className="note-count">{"Count: " + notes.length}</p>
+                    {/* Sign Out Button */}
+                    <button onClick={() => signOut()} className="sign-out-btn">Sign Out</button>
+                </header>
+                <section id="note-display">
+                    <div id="note-display-header">
+                        <h2>Note Clipboard</h2>
+                        <button
+                            className="add-note-button"
+                            onClick={() => {
+                                setFormOpen(!formOpen);
+                                setEditNote(null);
+                            }}
                         >
-                            <label>Title:</label>
-                            <input
-                                type="text"
-                                name="title"
-                                value={newNote.title}
-                                placeholder="Enter Title"
-                                onChange={handleNoteChange}
-                                className="newNoteTitle"
-                            />
-                            <label>Content:</label>
-                            <textarea
-                                name="content"
-                                value={newNote.content}
-                                placeholder="Enter Content"
-                                className="newNoteContent"
-                                onChange={handleNoteChange}
-                            />
-                            <label>Choose a color:</label>
-                            <div className="color-options">
-                                {["light-blue", "light-green", "light-red", "light-yellow", "light-purple"].map(color => (
-                                    <div key={color} className="color-option">
-                                        <input
-                                            type="radio"
-                                            name="noteColor"
-                                            value={color}
-                                            checked={newNote.color === color}
-                                            onChange={() => handleColorChange(color)}
-                                            id={color}
-                                        />
-                                        <label htmlFor={color} className={color}>
-                                            {color.replace("light-", "").toUpperCase()}
-                                        </label>
-                                    </div>
-                                ))}
+                            Add Note
+                        </button>
+                    </div>
+                    <div id="clipboard">
+                        {notes.map((note) => (
+                            <div
+                                key={note._id}
+                                className={`clipboard-item ${note.color}`}
+                                onClick={() => editNoteHandler(note)}
+                            >
+                                <div className="note-header">
+                                    <h1>{note.title}</h1>
+                                    <button onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeNote(note._id);
+                                    }} className="delete-btn">X
+                                    </button>
+                                </div>
+                                <p>{note.content}</p>
+                                <p className="note-date">{note.date}</p>
                             </div>
-                            <button type="submit">Add Note</button>
-                        </form>
-                    )}
-                </div>
-            </section>
-        </div>
+                        ))}
+
+                        {/* Form for Adding / Editing Notes */}
+                        {(formOpen || editNote) && (
+                            <form
+                                className={`note-form ${editNote ? editNote.color : newNote.color}`}
+                                onSubmit={handleNoteSubmit}
+                                style={{backgroundColor: editNote ? editNote.color : newNote.color}}
+                            >
+                                <label>Title:</label>
+                                <input
+                                    type="text"
+                                    name="title"
+                                    value={editNote ? editNote.title : newNote.title}
+                                    placeholder="Enter Title"
+                                    onChange={handleNoteChange}
+                                    className="newNoteTitle"
+                                />
+                                <label>Content:</label>
+                                <textarea
+                                    name="content"
+                                    value={editNote ? editNote.content : newNote.content}
+                                    placeholder="Enter Content"
+                                    className="newNoteContent"
+                                    onChange={handleNoteChange}
+                                />
+                                <label>Choose a color:</label>
+                                <div className="color-options">
+                                    {["light-blue", "light-green", "light-red", "light-yellow", "light-purple"].map(color => (
+                                        <div key={color} className="color-option">
+                                            <input
+                                                type="radio"
+                                                name="noteColor"
+                                                value={color}
+                                                checked={editNote ? editNote.color === color : newNote.color === color}
+                                                onChange={() => handleColorChange(color)}
+                                                id={color}
+                                            />
+                                            <label htmlFor={color} className={color}>
+                                                {color.replace("light-", "").toUpperCase()}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button type="submit">{editNote ? "Update Note" : "Add Note"}</button>
+                                <button type="button" onClick={resetForm}>Cancel</button>
+                            </form>
+                        )}
+                    </div>
+                </section>
+            </div>
+        </>
     );
 }

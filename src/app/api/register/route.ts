@@ -8,7 +8,7 @@ if (!mongo_uri) {
     throw new Error("Missing MONGODB_URI environment variable");
 }
 
-export const client = new MongoClient(mongo_uri);
+const client = new MongoClient(mongo_uri);
 
 export async function POST(request: NextRequest) {
     try {

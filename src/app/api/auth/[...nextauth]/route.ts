@@ -9,7 +9,7 @@ if (!mongo_uri) {
     throw new Error("Missing MONGODB_URI environment variable");
 }
 
-export const authOptions: AuthOptions = {
+const authOptions: AuthOptions = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
@@ -20,11 +20,6 @@ export const authOptions: AuthOptions = {
             async authorize(credentials): Promise<User | null> {
                 if (!credentials?.username || !credentials?.password) return null;
                 console.log("Received credentials:", credentials);
-
-                if (!credentials) {
-                    console.log("No credentials provided.");
-                    return null;
-                }
 
                 const client = new MongoClient(mongo_uri);
                 await client.connect();
@@ -71,4 +66,5 @@ export const authOptions: AuthOptions = {
 };
 
 const handler = NextAuth(authOptions);
+
 export { handler as GET, handler as POST };

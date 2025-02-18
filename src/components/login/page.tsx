@@ -40,8 +40,8 @@ export function Login() {
                 <button type="submit" className="login">Login</button>
             </form>
 
-            <div className="mt-3">
-                <p>Don't have an account? <a href="/register" className="text-blue-500">Create an account</a></p>
+            <div className="mt-3 text-black">
+                <p>Dont have an account? <a href="/register" className="text-blue-500">Create an account</a></p>
             </div>
 
             <button

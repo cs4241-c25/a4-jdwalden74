@@ -9,7 +9,7 @@ if (!mongo_uri) {
 }
 export const client = new MongoClient(mongo_uri || "");
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

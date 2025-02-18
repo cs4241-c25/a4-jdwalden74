@@ -2,7 +2,7 @@
 
 import "@/app/main.css"
 import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";  // Import signOut here
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export type Note = {
@@ -24,7 +24,7 @@ export default function Clipboard() {
         color: "light-grey"
     });
 
-    const { status } = useSession();
+    const {data: session, status} = useSession();
     const router = useRouter();
 
     useEffect(() => {
@@ -151,7 +151,7 @@ export default function Clipboard() {
         <>
             <div className="wrapper">
                 <header>
-                    <h3 id="sidebar">Users Notes</h3>
+                    <h3 id="sidebar">{session?.user?.name}</h3>
                     <p className="note-count">{"Count: " + notes.length}</p>
                     {/* Sign Out Button */}
                     <button onClick={() => signOut()} className="sign-out-btn">Sign Out</button>

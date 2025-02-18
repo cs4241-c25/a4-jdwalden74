@@ -1,55 +1,33 @@
 'use client';
-
+import {signIn, useSession} from "next-auth/react"
 import "@/app/login.css";
-import { useState,  } from "react";
-import { signIn } from "next-auth/react";
+import {useEffect} from "react";
 import { useRouter } from "next/navigation";
 
 export function Login() {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+
+
+    const {data: session, status} = useSession();
     const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setError("");
-
-        const result = await signIn("credentials", {
-            redirect: false,
-            username,
-            password,
-        });
-
-        if (result?.error) {
-            setError("Invalid username or password");
-        } else {
+    useEffect(() => {
+        if (status === "loading") return;
+        if (status === "authenticated"){
             router.push("/clipboard");
         }
-    };
+    }, [status, router]);
 
     return (
         <div className="wrapper-login">
             <h1 className="font-bold text-4xl py-5">Login</h1>
-            {error && <p className="text-red-500">{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="username">Username:</label>
-                <input type="text" id="username" className="text-black" required onChange={e => setUsername(e.target.value)} /><br />
-                <label htmlFor="password">Password:</label>
-                <input type="password" id="password" className="text-black" required onChange={e => setPassword(e.target.value)} /><br />
-                <button type="submit" className="login">Login</button>
-            </form>
-
-            <div className="mt-3 text-black">
-                <p>Dont have an account? <a href="/register" className="text-blue-500">Create an account</a></p>
-            </div>
-
-            <button
-                onClick={() => signIn("github")}
-                className="github-login"
-            >
-                Sign in with GitHub
-            </button>
+            {session ? null : (
+                <button
+                    onClick={() => signIn("github")}
+                    className="github-login text-black"
+                >
+                    Sign in with GitHub
+                </button>
+            )}
         </div>
     );
 }
